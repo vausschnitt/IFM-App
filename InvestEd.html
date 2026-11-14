@@ -87,7 +87,7 @@ p{margin:0 0 1em}
 .back{display:inline-block;margin-bottom:18px;text-decoration:none;font-weight:600;font-size:.95rem}
 .l-head{display:flex;gap:18px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .l-head .sub{color:var(--muted);font-family:var(--font-mono);font-size:.8rem;margin-top:6px}
-.lesson{max-width:760px}
+.lesson{max-width:none}
 .sec{margin-top:36px}
 .sec>.eyebrow{margin-bottom:12px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
@@ -184,7 +184,8 @@ td{font-family:var(--font-mono)}
   .brand small{display:none}
 }
 .hero{position:relative;background:linear-gradient(135deg,var(--accent-soft),var(--surface) 70%);border:1px solid var(--line);border-radius:18px;padding:26px 22px;margin-bottom:18px}
-.fan{position:absolute;right:26px;top:26px;display:flex;padding-left:34px}
+.fan{position:absolute;right:26px;top:26px;display:flex;padding-left:34px;z-index:0;opacity:.9}
+.hero>*:not(.fan){position:relative;z-index:1}
 .fan .note{margin-left:-34px;transform:rotate(var(--rt));transition:transform .3s;cursor:default}
 .hero:hover .fan .note{transform:rotate(calc(var(--rt)*2.2)) translateY(-6px)}
 @media (max-width:640px){.fan{display:none}}
@@ -550,7 +551,7 @@ var f={s0:fxs,pmy:fxl,pus:fxl,t:function(v){return v+(v===1?' year':' years');}}
 root.innerHTML='<div class="controls">'+field('s0','Spot rate today (MYR per 1 USD)',3.5,5.5,0.05,4.5,f.s0)+field('pmy','Malaysia inflation per year',0,10,0.5,2,f.pmy)+field('pus','US inflation per year',0,10,0.5,3,f.pus)+field('t','Time',1,10,1,1,f.t)+'</div><div id="out"></div>';
 wire(root,f,function(v){
 var k=Math.pow((1+v.pmy/100)/(1+v.pus/100),v.t),s=v.s0*k;
-$('#out',root).innerHTML='<div class="stats">'+stat(fxs(s).replace(/(\.\d\d)$/,'$1')+' ('+fxr(s)+')','PPP-implied rate after '+v.t+(v.t===1?' year':' years'),true)+stat(fxp(k-1),'Change in MYR per USD',false)+'</div>'+
+$('#out',root).innerHTML='<div class="stats">'+stat('RM '+fxr(s),'PPP-implied rate after '+v.t+(v.t===1?' year':' years'),true)+stat(fxp(k-1),'Change in MYR per USD',false)+'</div>'+
 '<p class="say'+(k>1?' warn':'')+'">S = '+v.s0.toFixed(2)+' × ((1 + '+(v.pmy/100).toFixed(3)+') / (1 + '+(v.pus/100).toFixed(3)+'))'+(v.t>1?'^'+v.t:'')+' = '+fxr(s)+'. Malaysian inflation is '+(v.pmy>v.pus?'higher than':v.pmy<v.pus?'lower than':'equal to')+' US inflation, so the ringgit '+fxDir(k-1)+'.</p><p class="fine">Illustrative inflation rates. PPP is a long-run tendency, not a short-run forecast.</p>';
 });fxTry(root,'ppp');};
 
