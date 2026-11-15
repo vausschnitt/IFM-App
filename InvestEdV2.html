@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>InvestEd</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: translucent top bar, one reading column. Each section is a plain heading followed by at most one grouped surface.
+   Inside a surface there are only hairline-separated rows, never boxes within boxes. */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue","Segoe UI",Roboto,system-ui,sans-serif;
+  --bg:#F5F5F7; --surface:#FFFFFF; --ink:#1D1D1F; --muted:#6E6E73;
+  --line:rgba(0,0,0,.12); --fill:rgba(120,120,128,.12); --fill2:rgba(120,120,128,.24); --hover:rgba(0,0,0,.035);
+  --mat:rgba(245,245,247,.72);
+  --accent:#0066CC; --accent-ink:#FFFFFF; --accent-soft:rgba(0,102,204,.1);
+  --good:#1E8E3E; --bad:#D70015; --chip-ink:#FFFFFF;
+  --chk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.5l3 3 5-6' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --n1:#2F6DB5; --n5:#2E8B57; --n10:#C4413B; --n20:#C2761C; --n50:#237F8B; --n100:#7A4FA0;
+  --spring:cubic-bezier(.22,1,.36,1);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --surface:#1C1C1E; --ink:#F5F5F7; --muted:#98989D;
+    --line:rgba(255,255,255,.14); --fill:rgba(120,120,128,.24); --fill2:rgba(120,120,128,.36); --hover:rgba(255,255,255,.05);
+    --mat:rgba(0,0,0,.6);
+    --accent:#2997FF; --accent-ink:#000000; --accent-soft:rgba(41,151,255,.16);
+    --good:#30D158; --bad:#FF453A; --chip-ink:#000000;
+    --chk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.5l3 3 5-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --n1:#5B9BE0; --n5:#52B87E; --n10:#E8716A; --n20:#E8A24E; --n50:#4FBAC7; --n100:#A682CC;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#1C1C1E; --ink:#F5F5F7; --muted:#98989D;
+  --line:rgba(255,255,255,.14); --fill:rgba(120,120,128,.24); --fill2:rgba(120,120,128,.36); --hover:rgba(255,255,255,.05);
+  --mat:rgba(0,0,0,.6);
+  --accent:#2997FF; --accent-ink:#000000; --accent-soft:rgba(41,151,255,.16);
+  --good:#30D158; --bad:#FF453A; --chip-ink:#000000;
+  --chk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.5l3 3 5-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --n1:#5B9BE0; --n5:#52B87E; --n10:#E8716A; --n20:#E8A24E; --n50:#4FBAC7; --n100:#A682CC;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased;margin:0;padding:0 0 72px;
+  font-variant-numeric:tabular-nums;
+}
+a{color:var(--accent);text-decoration:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+button{-webkit-tap-highlight-color:transparent}
+
+/* top bar: translucent material, content scrolls underneath; hairline appears only once content passes under it */
+.top{position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top,0px);background:var(--mat);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);transition:box-shadow .25s}
+.top.scrolled{box-shadow:0 .5px 0 var(--line)}
+.top-in,.shell{max-width:980px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.top-in{display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;min-height:52px;padding-top:8px;padding-bottom:8px}
+.shell{overflow-x:clip}
+.brand{font-weight:700;font-size:1.15rem;letter-spacing:-.02em;color:var(--ink)}
+.top nav{display:flex;gap:2px;margin-left:auto;align-items:center;flex-wrap:wrap}
+.top nav a{padding:6px 12px;border-radius:99px;color:var(--muted);font-weight:500;font-size:.9rem;letter-spacing:.005em}
+.top nav a:hover{color:var(--ink)}
+.top nav a[aria-current="page"]{background:var(--fill);color:var(--ink)}
+.prog-pill{font-size:.8rem;color:var(--muted);padding:4px 10px;white-space:nowrap;letter-spacing:.01em}
+
+h1,h2,h3{line-height:1.12;text-wrap:balance;margin:0;font-weight:700}
+h1{font-size:clamp(2.25rem,6vw,3.5rem);letter-spacing:-.035em;line-height:1.05}
+h2{font-size:1.6rem;letter-spacing:-.025em}
+h3{font-size:1.1rem;letter-spacing:-.01em;font-weight:600}
+p{margin:0 0 1em}
+main{padding-block:32px 24px}
+.lede{font-size:1.3rem;line-height:1.35;color:var(--muted);max-width:34em;margin-top:16px}
+.eyebrow{font-size:.8rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.sec{margin-top:52px}
+.sec-t{margin-bottom:16px}
+.sec>p{max-width:40em}
+.fine{font-size:.8rem;color:var(--muted);margin:14px 0 0;letter-spacing:.005em}
+
+/* surfaces: one level only */
+.group,.list{background:var(--surface);border-radius:22px;min-width:0}
+.group{padding:26px}
+.list{overflow:hidden}
+
+/* home */
+.hero{position:relative;padding:8px 0 44px}
+.hero>*:not(.fan){position:relative;z-index:1}
+.fan{position:absolute;right:0;top:14px;display:flex;padding-left:40px;z-index:0}
+.fan .note{margin-left:-40px;transform:rotate(var(--rt));transition:transform .6s var(--spring);box-shadow:0 6px 18px rgba(0,0,0,.18),inset 0 0 0 1px rgba(255,255,255,.28)}
+.hero:hover .fan .note{transform:rotate(calc(var(--rt)*2)) translateY(-6px)}
+@media (max-width:760px){.fan{display:none}}
+.hero h1{max-width:12em}
+.progress{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px 36px;margin-top:32px;max-width:580px}
+.prog b{display:block;font-size:.95rem;font-weight:600}
+.meter-bar{height:6px;border-radius:99px;background:var(--fill2);overflow:hidden;margin:8px 0}
+.meter-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .6s var(--spring)}
+.daily{margin-bottom:52px}
+.daily h3{margin-bottom:6px}
+.item{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center;padding:16px 20px;color:var(--ink);transition:background-color .2s}
+.item+.item::before{content:"";position:absolute;top:0;left:96px;right:0;height:1px;background:var(--line)}
+.item:hover{background:var(--hover)}
+.item:active{background:var(--fill);transition-duration:.05s}
+.item::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-top:2px solid var(--muted);transform:rotate(45deg);opacity:.55;margin-right:4px}
+.item h3{margin-bottom:2px}
+.item p{margin:0;color:var(--muted);font-size:.95rem;line-height:1.4}
+.item .meta{display:flex;gap:12px;margin-top:6px;font-size:.8rem;color:var(--muted)}
+.tag-done{color:var(--good);font-weight:600}
+.note{width:60px;height:38px;border-radius:9px;background-color:var(--c);background-image:linear-gradient(180deg,rgba(255,255,255,.24),rgba(255,255,255,0) 60%);
+  color:var(--chip-ink);font-weight:700;font-size:.85rem;letter-spacing:.01em;display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+.note.big{width:76px;height:46px;font-size:1rem;border-radius:11px}
+.foot-note{margin-top:32px;color:var(--muted);font-size:.85rem;max-width:56em}
+
+/* lesson */
+.back{display:inline-flex;align-items:center;gap:4px;margin-bottom:22px;font-size:1.05rem}
+.back::before{content:"";width:9px;height:9px;border-left:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(45deg) translate(1px,-1px);margin-right:4px;border-radius:1px}
+.l-head{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.l-head h1{font-size:clamp(2rem,5vw,2.9rem)}
+.l-head .sub{color:var(--muted);font-size:.9rem;margin-top:8px}
+.lesson .intro p{font-size:1.1rem;max-width:36em}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:20px 36px}
+.field{display:block;min-width:0}
+.f-top{display:flex;justify-content:space-between;gap:8px;font-size:.9rem;color:var(--muted);margin-bottom:4px}
+output{color:var(--ink);font-weight:600}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--accent) var(--p,0%),var(--fill2) var(--p,0%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-10px;border-radius:50%;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.28);transition:transform .25s var(--spring)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--fill2)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--accent)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:50%;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.28)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:20px 28px;margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+.stat{min-width:0}
+.stat .v{font-size:1.5rem;font-weight:600;letter-spacing:-.02em;line-height:1.15;overflow-wrap:anywhere}
+.stat .l{font-size:.8rem;color:var(--muted);line-height:1.35;margin-top:4px}
+.stat.hl .v{color:var(--accent)}
+.say{margin:22px 0 0;font-size:1rem;font-weight:500;line-height:1.45}
+.say.warn{color:var(--bad)}
+.bars{display:grid;gap:14px;margin-top:26px}
+.bar-row{display:grid;grid-template-columns:minmax(90px,170px) minmax(0,1fr) auto;gap:14px;align-items:center;font-size:.9rem}
+.bar-row .t{height:10px;background:var(--fill);border-radius:99px;overflow:hidden}
+.bar-row .t i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .5s var(--spring)}
+.bar-row .t i.alt{background:var(--n10)}
+.bar-row b{font-weight:600}
+.points{margin:0;padding-left:1.2em;max-width:40em}
+.points li{margin-bottom:.6em;padding-left:.2em}
+.points li::marker{color:var(--accent)}
+svg.chart{width:100%;height:auto;display:block;margin-top:22px}
+.ax{fill:var(--muted);font:11px var(--font)}
+.grid-l{stroke:var(--line);stroke-width:1}
+.l-bal{stroke:var(--accent);stroke-width:2.5;fill:none;stroke-linejoin:round}
+.a-bal{fill:var(--accent);opacity:.14}
+.l-con{stroke:var(--ink);stroke-width:1.6;stroke-dasharray:5 4;fill:none}
+.l-vol{stroke:var(--accent);stroke-width:2.5;fill:none;stroke-linejoin:round}
+.l-floor{stroke:var(--n10);stroke-width:1.5;stroke-dasharray:5 4}
+.dot{fill:var(--accent)}
+.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-top:14px}
+.legend i{display:inline-block;width:18px;height:0;border-top:3px solid var(--accent);vertical-align:middle;margin-right:6px}
+.legend i.d{border-top:2px dashed var(--ink)}
+.legend i.r{border-top:2px dashed var(--n10)}
+
+/* segmented chips */
+.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -4px 22px;padding:2px 4px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;font:inherit;font-weight:600;font-size:.88rem;padding:8px 15px;border-radius:99px;border:0;background:var(--fill);color:var(--ink);cursor:pointer;transition:background-color .2s,color .2s,transform .3s var(--spring)}
+.tab:active{transform:scale(.96);transition-duration:.05s}
+.tab[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.dl{display:grid;grid-template-columns:minmax(110px,170px) minmax(0,1fr);margin:0}
+.dl dt,.dl dd{margin:0;padding:13px 0;border-top:1px solid var(--line)}
+.dl dt{color:var(--muted);font-size:.9rem;padding-top:14px}
+.dl dt:first-of-type,.dl dt:first-of-type+dd{border-top:0}
+.gauge{display:inline-flex;gap:4px;vertical-align:middle;margin-right:10px}
+.gauge i{width:16px;height:6px;border-radius:3px;background:var(--fill2)}
+.gauge i.on{background:var(--accent)}
+.gauge.risk i.on{background:var(--n20)}
+
+/* checklist, table, flags */
+.check{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.check:last-of-type{border-bottom:0}
+.check input{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--muted);margin:1px 0 0;flex:none;cursor:pointer;background:transparent;transition:background-color .25s,border-color .25s,transform .3s var(--spring)}
+.check input:active{transform:scale(.9);transition-duration:.05s}
+.check input:checked{background:var(--accent) var(--chk) center/14px no-repeat;border-color:var(--accent)}
+.check span b{display:block;font-weight:600}
+.check span small{color:var(--muted);font-size:.9rem;line-height:1.4;display:block}
+.tbl-wrap{overflow-x:auto;margin-top:18px}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:420px}
+th,td{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;padding-left:0}
+th{font-weight:600;color:var(--muted);font-size:.8rem}
+tr:last-child td{border-bottom:0}
+.sub-h{margin:34px 0 10px}
+.flags{margin:0;padding:0;list-style:none}
+.flags li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:.95rem;line-height:1.4}
+.flags li:last-child{border-bottom:0}
+.flags li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--bad);margin-top:.5em;flex:none}
+
+/* quiz: options are list rows, not boxes */
+.q-head{font-size:.8rem;color:var(--muted);margin-bottom:8px;letter-spacing:.02em}
+.q-text{margin-bottom:12px;font-size:1.35rem;letter-spacing:-.015em}
+.opts{display:grid;margin:0 -12px}
+.opt{position:relative;font:inherit;text-align:left;padding:15px 12px;border:0;border-radius:12px;background:transparent;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;transition:background-color .2s,transform .3s var(--spring)}
+.opt+.opt::before{content:"";position:absolute;top:0;left:12px;right:12px;height:1px;background:var(--line)}
+.opt:hover:not(:disabled){background:var(--hover)}
+.opt:active:not(:disabled){background:var(--fill);transform:scale(.985);transition-duration:.05s}
+.opt:disabled{cursor:default;color:var(--muted)}
+.opt.ok{color:var(--good);font-weight:600}
+.opt.ok::after{content:"✓";font-weight:700}
+.opt.no{color:var(--bad);animation:shake .4s var(--spring)}
+.opt.no::after{content:"✕";font-weight:700}
+.q-fb{margin-top:16px;min-height:1.4em;font-size:.95rem;line-height:1.45}
+.btn{font:inherit;font-weight:600;font-size:.95rem;padding:11px 22px;border-radius:99px;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer;display:inline-block;transition:transform .3s var(--spring),opacity .2s}
+.btn:active{transform:scale(.96);transition-duration:.05s}
+.btn.ghost{background:var(--accent-soft);color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.score{font-size:3rem;font-weight:700;letter-spacing:-.035em;line-height:1.1}
+select.search{appearance:none;-webkit-appearance:none}
+
+/* glossary */
+.search{font:inherit;width:100%;max-width:420px;padding:11px 16px;border-radius:12px;border:0;background:var(--fill);color:var(--ink);margin:18px 0 28px;display:block}
+.search::placeholder{color:var(--muted)}
+.gl{margin:0;padding:6px 22px}
+.gl div{padding:16px 0;border-bottom:1px solid var(--line)}
+.gl div:last-child{border-bottom:0}
+.gl dt{font-weight:600;font-size:1.05rem;letter-spacing:-.01em}
+.gl dd{margin:4px 0 0;color:var(--muted);max-width:60em;font-size:.95rem}
+@media (max-width:520px){
+  .dl{grid-template-columns:1fr}
+  .dl dd{border-top:0;padding-top:0}
+  .bar-row{grid-template-columns:minmax(0,1fr) auto}
+  .bar-row .t{grid-column:1 / -1;order:3}
+  .group{padding:20px}
+  .item{padding:14px 16px;gap:14px}
+  .item+.item::before{left:90px}
+}
+
+/* feedback + motion */
+.rp{position:fixed;top:env(safe-area-inset-top,0px);left:0;height:2px;width:0;background:var(--accent);z-index:30}
+.cf{position:fixed;left:50%;top:50%;width:9px;height:14px;border-radius:2px;z-index:40;pointer-events:none;animation:cf 1.4s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes cf{40%{transform:translate(calc(var(--x)*.6),var(--y)) rotate(var(--r))}100%{transform:translate(var(--x),320px) rotate(var(--r));opacity:0}}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.score.pop{animation:pop .5s var(--spring)}
+@keyframes pop{40%{transform:scale(1.2)}}
+/* pages enter from the side they were opened from and leave the same way (forward in from right, back in from left) */
+@keyframes in-fwd{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes in-back{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+#app.enter{animation:in-fwd .55s var(--spring) both}
+#app.enter[data-dir="back"]{animation-name:in-back}
+
+/* accessibility preferences */
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation:none!important}
+  #app.enter{animation:fade .2s ease both!important}
+  .fan .note,.hero:hover .fan .note{transform:rotate(var(--rt))}
+}
+@media (prefers-reduced-transparency:reduce){
+  .top{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media (prefers-contrast:more){
+  :root{--line:rgba(128,128,128,.6)}
+  .top{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .group,.list{box-shadow:inset 0 0 0 1px var(--muted)}
+}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#home">InvestEd</a>
+    <nav aria-label="Main">
+      <a href="#home" data-nav="home">Lessons</a>
+      <a href="#glossary" data-nav="glossary">Glossary</a>
+      <span class="prog-pill" id="pill">0 of 10 done</span>
+    </nav>
+  </div>
+</header>
+<div class="shell">
+  <main id="app"></main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var fmt=function(n){return 'RM '+Math.round(n).toLocaleString('en-MY')};
+var fmtK=function(v){return v>=1e6?(v/1e6).toFixed(1)+'m':v>=1000?Math.round(v/1000)+'k':String(Math.round(v))};
+
+/* ---------- progress store ---------- */
+var store={done:{},checks:{}};
+try{var raw=localStorage.getItem('modal-progress');if(raw){var p=JSON.parse(raw);store.done=p.done||{};store.checks=p.checks||{};}}catch(e){}
+function save(){try{localStorage.setItem('modal-progress',JSON.stringify(store));}catch(e){}}
+
+/* ---------- helpers ---------- */
+function field(key,label,min,max,step,val,f){
+  return '<label class="field"><span class="f-top"><span>'+label+'</span><output data-out="'+key+'">'+f(val)+'</output></span>'+
+  '<input type="range" data-key="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'"></label>';
+}
+function fill(i){var mn=+i.min,mx=+i.max;i.style.setProperty('--p',((+i.value-mn)/(mx-mn)*100)+'%');}
+function wire(root,fmts,cb){
+  function get(){var v={};root.querySelectorAll('input[data-key]').forEach(function(i){v[i.dataset.key]=+i.value;});return v;}
+  root.querySelectorAll('input[type=range]').forEach(fill);
+  root.addEventListener('input',function(e){
+    var i=e.target.closest('input[data-key]');if(!i)return;
+    fill(i);
+    root.querySelector('[data-out="'+i.dataset.key+'"]').textContent=fmts[i.dataset.key](+i.value);
+    cb(get());
+  });
+  cb(get());
+}
+function niceStep(x){var p=Math.pow(10,Math.floor(Math.log10(x)));var f=x/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p;}
+function stat(v,l,hl){return '<div class="stat'+(hl?' hl':'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+
+/* ---------- widgets ---------- */
+var W={};
+
+W.inflation=function(root){
+  var f={amt:fmt,sav:function(v){return v.toFixed(1)+'%'},infl:function(v){return v.toFixed(1)+'%'},yrs:function(v){return v+' years'}};
+  root.innerHTML='<div class="controls">'+
+    field('amt','Savings today',1000,100000,1000,10000,f.amt)+
+    field('sav','Your savings earn per year',0,8,0.5,2.5,f.sav)+
+    field('infl','Inflation per year',0,8,0.5,3,f.infl)+
+    field('yrs','Time',1,40,1,20,f.yrs)+
+  '</div><div id="out"></div>';
+  wire(root,f,function(v){
+    var nominal=v.amt*Math.pow(1+v.sav/100,v.yrs);
+    var real=nominal/Math.pow(1+v.infl/100,v.yrs);
+    var price=v.amt*Math.pow(1+v.infl/100,v.yrs);
+    var max=Math.max(nominal,v.amt,real);
+    var msg=real<v.amt-1
+      ? 'After '+v.yrs+' years your balance looks bigger, but it buys about '+fmt(v.amt-real)+' less than the money you started with.'
+      : 'Here your money grows faster than prices, so its buying power rises by about '+fmt(real-v.amt)+'.';
+    $('#out',root).innerHTML=
+      '<div class="bars">'+
+        '<div class="bar-row"><span>Balance in the bank</span><span class="t"><i style="width:'+(nominal/max*100)+'%"></i></span><b>'+fmt(nominal)+'</b></div>'+
+        '<div class="bar-row"><span>Buying power, in today\'s RM</span><span class="t"><i class="alt" style="width:'+(real/max*100)+'%"></i></span><b>'+fmt(real)+'</b></div>'+
+      '</div>'+
+      '<div class="stats">'+
+        stat(fmt(price),'What costs '+fmt(v.amt)+' today would cost then',false)+
+        stat(((real/v.amt-1)*100).toFixed(1)+'%','Change in buying power',true)+
+      '</div>'+
+      '<p class="say'+(real<v.amt-1?' warn':'')+'">'+msg+'</p>'+
+      '<p class="fine">Illustrative rates you can change. Real savings rates and inflation vary from year to year.</p>';
+  });
+};
+
+var ASSETS=[
+ {k:'Cash and fixed deposits',risk:1,liq:5,what:'Money in a savings account or a fixed deposit at a bank.',earn:'Interest at a rate the bank sets.',danger:'Returns may not keep up with inflation. Deposits in Malaysian banks are protected by PIDM up to RM250,000 per depositor per bank.',horizon:'Under 1 year',eg:'Bank savings account, fixed deposit'},
+ {k:'Bonds and sukuk',risk:2,liq:3,what:'A loan you give to a government or company. Sukuk are the Shariah-compliant version.',earn:'Regular profit payments, then your money back at maturity.',danger:'The issuer could fail to pay, and prices fall when interest rates rise.',horizon:'1 to 10 years',eg:'Malaysian Government Securities (MGS), Government Investment Issues (GII)'},
+ {k:'Stocks',risk:4,liq:4,what:'Small ownership stakes in listed companies.',earn:'Price gains and dividends.',danger:'Prices can fall sharply, and a single company can fail.',horizon:'5+ years',eg:'Shares listed on Bursa Malaysia'},
+ {k:'Unit trusts and ETFs',risk:3,liq:4,what:'Pooled funds that hold many investments. ETFs trade on the exchange like shares.',earn:'Growth in the fund price plus distributions.',danger:'Fees reduce returns, and a fund is only as safe as what it holds.',horizon:'3 to 10+ years',eg:'ASNB funds (some are limited to Bumiputera), ETFs listed on Bursa Malaysia'},
+ {k:'REITs',risk:3,liq:4,what:'Funds that own income-producing property such as malls and offices, listed on Bursa.',earn:'Rental income paid out as distributions, plus price changes.',danger:'Property values, occupancy and interest rates all move the price.',horizon:'5+ years',eg:'Property trusts listed on Bursa Malaysia'},
+ {k:'Gold and property',risk:3,liq:2,what:'Physical assets. Gold is held as a store of value. Property can bring rent and growth.',earn:'Price gains, plus rent for property.',danger:'Gold pays no income. Property is costly to buy and sell and hard to split up.',horizon:'5+ years',eg:'Gold bars or gold accounts, residential property'}
+];
+function gauge(n,cls){var s='<span class="gauge '+cls+'" aria-hidden="true">';for(var i=1;i<=5;i++)s+='<i class="'+(i<=n?'on':'')+'"></i>';return s+'</span>';}
+W.assets=function(root){
+  var cur=0;
+  function draw(){
+    var a=ASSETS[cur];
+    root.innerHTML='<div class="tabs" role="group" aria-label="Asset types">'+ASSETS.map(function(x,i){return '<button class="tab" data-i="'+i+'" aria-pressed="'+(i===cur)+'">'+x.k+'</button>';}).join('')+'</div>'+
+    '<dl class="dl">'+
+      '<dt>What it is</dt><dd>'+a.what+'</dd>'+
+      '<dt>How you earn</dt><dd>'+a.earn+'</dd>'+
+      '<dt>Main risk</dt><dd>'+a.danger+'</dd>'+
+      '<dt>Risk level</dt><dd>'+gauge(a.risk,'risk')+a.risk+' of 5</dd>'+
+      '<dt>Easy to sell</dt><dd>'+gauge(a.liq,'')+a.liq+' of 5</dd>'+
+      '<dt>Usual time frame</dt><dd>'+a.horizon+'</dd>'+
+      '<dt>Examples</dt><dd>'+a.eg+'</dd>'+
+    '</dl><p class="fine">Ratings are a rough guide for comparison. Examples are not recommendations.</p>';
+    root.querySelectorAll('.tab').forEach(function(b){b.addEventListener('click',function(){cur=+b.dataset.i;draw();var t=root.querySelector('.tab[aria-pressed="true"]');if(t)t.focus();});});
+  }
+  draw();
+};
+
+function sim(init,mo,rate,years){
+  var b=init,c=init,bal=[b],con=[c],r=rate/100/12;
+  for(var y=1;y<=years;y++){for(var m=0;m<12;m++){b=b*(1+r)+mo;c+=mo;}bal.push(b);con.push(c);}
+  return {bal:bal,con:con};
+}
+W.compound=function(root){
+  var f={init:fmt,mo:fmt,rate:function(v){return v.toFixed(1)+'%'},yrs:function(v){return v+' years'}};
+  root.innerHTML='<div class="controls">'+
+    field('init','Starting amount',0,50000,500,1000,f.init)+
+    field('mo','Add each month',0,3000,50,500,f.mo)+
+    field('rate','Return per year',0,12,0.5,6,f.rate)+
+    field('yrs','Time',1,40,1,20,f.yrs)+
+  '</div><div id="out"></div>';
+  wire(root,f,function(v){
+    var s=sim(v.init,v.mo,v.rate,v.yrs);
+    var fin=s.bal[v.yrs],put=s.con[v.yrs],gain=fin-put;
+    var W_=640,H=260,L=52,R=14,T=12,B=28,pw=W_-L-R,ph=H-T-B;
+    var step=niceStep(Math.max(fin,1)/4),top=step*4;
+    var X=function(y){return L+y/v.yrs*pw},Y=function(val){return T+ph-val/top*ph};
+    var svg='<svg class="chart" viewBox="0 0 '+W_+' '+H+'" role="img" aria-label="Chart of balance and money put in over '+v.yrs+' years">';
+    for(var g=0;g<=4;g++){var yy=Y(step*g);svg+='<line class="grid-l" x1="'+L+'" x2="'+(W_-R)+'" y1="'+yy+'" y2="'+yy+'"/><text class="ax" x="'+(L-8)+'" y="'+(yy+4)+'" text-anchor="end">'+fmtK(step*g)+'</text>';}
+    var iv=v.yrs<=12?2:v.yrs<=25?5:10;
+    for(var t=0;t<=v.yrs;t+=iv){svg+='<text class="ax" x="'+X(t)+'" y="'+(H-8)+'" text-anchor="middle">'+t+'</text>';}
+    var pb=s.bal.map(function(b,i){return X(i).toFixed(1)+','+Y(b).toFixed(1)}).join(' ');
+    var pc=s.con.map(function(b,i){return X(i).toFixed(1)+','+Y(b).toFixed(1)}).join(' ');
+    svg+='<polygon class="a-bal" points="'+X(0)+','+Y(0)+' '+pb+' '+X(v.yrs)+','+Y(0)+'"/>';
+    svg+='<polyline class="l-con" points="'+pc+'"/><polyline class="l-bal" points="'+pb+'"/>';
+    svg+='<circle class="dot" cx="'+X(v.yrs)+'" cy="'+Y(fin)+'" r="4.5"/></svg>';
+    var delayMsg='';
+    if(v.yrs>10){
+      var late=sim(v.init,v.mo,v.rate,v.yrs-10).bal[v.yrs-10];
+      delayMsg='If you waited 10 years before starting this same plan, you would end with '+fmt(late)+', which is '+fmt(fin-late)+' less.';
+    } else {delayMsg='Move the time slider past 10 years to see what waiting costs.';}
+    var dbl=v.rate>0?(72/v.rate).toFixed(1)+' years':'never';
+    $('#out',root).innerHTML=
+      '<div class="stats">'+stat(fmt(fin),'Value after '+v.yrs+' years',true)+stat(fmt(put),'Money you put in',false)+stat(fmt(gain),'Growth earned',false)+stat(dbl,'Rule of 72: time to double',false)+'</div>'+
+      svg+
+      '<div class="legend"><span><i></i>Balance</span><span><i class="d"></i>Money you put in</span></div>'+
+      '<p class="say">'+delayMsg+'</p>'+
+      '<p class="fine">Assumes a steady return compounded monthly. Real returns change every year and are never guaranteed. Fees and tax are not included.</p>';
+  });
+};
+
+W.diversify=function(root){
+  var SIG=30,RHO=0.35;
+  var vol=function(n){return SIG*Math.sqrt(1/n+(1-1/n)*RHO)};
+  var floor=SIG*Math.sqrt(RHO);
+  var f={n:function(v){return v+(v===1?' stock':' stocks')}};
+  root.innerHTML='<div class="controls">'+field('n','Stocks you hold, equal amounts',1,30,1,1,f.n)+'</div><div id="out"></div>';
+  wire(root,f,function(v){
+    var cv=vol(v.n);
+    var W_=640,H=220,L=44,R=14,T=12,B=30,pw=W_-L-R,ph=H-T-B,top=35;
+    var X=function(n){return L+(n-1)/29*pw},Y=function(val){return T+ph-val/top*ph};
+    var svg='<svg class="chart" viewBox="0 0 '+W_+' '+H+'" role="img" aria-label="Risk falls as the number of stocks rises, then levels off">';
+    [0,10,20,30].forEach(function(g){svg+='<line class="grid-l" x1="'+L+'" x2="'+(W_-R)+'" y1="'+Y(g)+'" y2="'+Y(g)+'"/><text class="ax" x="'+(L-8)+'" y="'+(Y(g)+4)+'" text-anchor="end">'+g+'%</text>';});
+    [1,5,10,15,20,25,30].forEach(function(n){svg+='<text class="ax" x="'+X(n)+'" y="'+(H-8)+'" text-anchor="middle">'+n+'</text>';});
+    var pts=[];for(var n=1;n<=30;n++)pts.push(X(n).toFixed(1)+','+Y(vol(n)).toFixed(1));
+    svg+='<line class="l-floor" x1="'+L+'" x2="'+(W_-R)+'" y1="'+Y(floor)+'" y2="'+Y(floor)+'"/>';
+    svg+='<polyline class="l-vol" points="'+pts.join(' ')+'"/><circle class="dot" cx="'+X(v.n)+'" cy="'+Y(cv)+'" r="5"/></svg>';
+    $('#out',root).innerHTML=
+      '<div class="stats">'+stat(cv.toFixed(1)+'%','Yearly ups and downs of your portfolio',true)+stat(floor.toFixed(1)+'%','Level that stays however many you add',false)+stat(Math.round((1-cv/SIG)*100)+'%','Reduction versus holding one stock',false)+'</div>'+
+      svg+
+      '<div class="legend"><span><i></i>Portfolio risk</span><span><i class="r"></i>Market risk that remains</span></div>'+
+      '<p class="say">In a typical year, about two years in three, returns land within roughly '+cv.toFixed(0)+' percentage points either side of the average. Most of the gain comes from the first 10 or so stocks.</p>'+
+      '<p class="fine">Simplified model: each stock moves about 30% a year and any two stocks are moderately linked. Real figures differ by market and period. The chart shows yearly risk as a percentage on the left and the number of stocks along the bottom.</p>';
+  });
+};
+
+var STEPS=[
+ ['emerg','Build an emergency fund','Aim for 3 to 6 months of living costs in cash or a fixed deposit before you invest.'],
+ ['debt','Clear expensive debt','Credit card interest is usually higher than what investing can reliably earn.'],
+ ['goal','Write down your goal and time frame','Buying a car in 2 years and retirement in 30 years need different investments.'],
+ ['epf','Check your EPF balance','Your EPF is already a long-term investment. Know what you have before adding more.'],
+ ['licence','Pick a licensed provider','Check that brokers, fund managers and platforms are licensed by the Securities Commission Malaysia.'],
+ ['auto','Start small and automate','A fixed monthly amount beats waiting until you feel ready.']
+];
+W.start=function(root){
+  var rows=STEPS.map(function(s){return '<label class="check"><input type="checkbox" data-id="'+s[0]+'"'+(store.checks[s[0]]?' checked':'')+'><span><b>'+s[1]+'</b><small>'+s[2]+'</small></span></label>';}).join('');
+  var f={px:function(v){return 'RM '+v.toFixed(2)}};
+  root.innerHTML='<h3 class="sub-h" style="margin-top:0">Your starting checklist</h3>'+rows+
+  '<h3 class="sub-h">What does one Bursa lot cost?</h3>'+
+  '<p class="fine" style="margin:0 0 18px">Shares on Bursa Malaysia are usually bought in a board lot of 100 units.</p>'+
+  '<div class="controls">'+field('px','Share price',0.5,20,0.1,2.5,f.px)+'</div><div id="lot"></div>'+
+  '<h3 class="sub-h">Scam warning signs</h3>'+
+  '<ul class="flags"><li>Promises of guaranteed high returns with no risk</li><li>Pressure to decide today or "limited slots"</li><li>Provider is not on the Securities Commission Malaysia licence list, or appears on its Investor Alert List</li><li>Asks you to recruit friends or pay in cash or to a personal account</li></ul>';
+  root.addEventListener('change',function(e){var c=e.target.closest('input[data-id]');if(!c)return;store.checks[c.dataset.id]=c.checked;save();});
+  wire(root,f,function(v){
+    $('#lot',root).innerHTML='<div class="stats">'+stat(fmt2(v.px*100),'Cost of 1 lot (100 units)',true)+stat(fmt2(v.px*1000),'Cost of 10 lots',false)+'</div><p class="fine">Before brokerage and other charges, which add to the cost.</p>';
+  });
+};
+function fmt2(n){return 'RM '+n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+var SCEN={
+  dip:{name:'Dip then recovery',p:[10,8,6,8,10,12]},
+  rise:{name:'Steady rise',p:[8,9,10,11,12,13]},
+  fall:{name:'Steady fall',p:[13,12,11,10,9,8]}
+};
+W.dca=function(root){
+  var cur='dip';
+  function draw(){
+    var p=SCEN[cur].p,amt=600,units=0,rows='';
+    p.forEach(function(px,i){var u=amt/px;units+=u;rows+='<tr><td>Month '+(i+1)+'</td><td>'+px.toFixed(2)+'</td><td>'+u.toFixed(1)+'</td><td>'+units.toFixed(1)+'</td></tr>';});
+    var invested=amt*p.length,last=p[p.length-1];
+    var dcaVal=units*last,lumpUnits=invested/p[0],lumpVal=lumpUnits*last;
+    var avgCost=invested/units;
+    var verdict=dcaVal>lumpVal?'Here monthly investing finished ahead of putting everything in at the start.':'Here investing everything at the start finished ahead, because prices only went up.';
+    root.innerHTML='<div class="tabs" role="group" aria-label="Price path">'+Object.keys(SCEN).map(function(k){return '<button class="tab" data-k="'+k+'" aria-pressed="'+(k===cur)+'">'+SCEN[k].name+'</button>';}).join('')+'</div>'+
+    '<div class="tbl-wrap" style="margin-top:0"><table><thead><tr><th>When</th><th>Price (RM)</th><th>Units bought</th><th>Total units</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="stats">'+stat(fmt(invested),'Invested, RM600 a month',false)+stat('RM '+avgCost.toFixed(2),'Your average cost per unit',false)+stat(fmt(dcaVal),'Value of monthly plan at the end',true)+stat(fmt(lumpVal),'Value if all RM'+invested.toLocaleString('en-MY')+' went in at month 1',false)+'</div>'+
+    '<p class="say">'+verdict+' Monthly investing helps most when prices swing. It lowers the stress of picking a start date, but it does not always win.</p>'+
+    '<p class="fine">Made-up prices for teaching. Ignores fees.</p>';
+    root.querySelectorAll('.tab').forEach(function(b){b.addEventListener('click',function(){cur=b.dataset.k;draw();var t=root.querySelector('.tab[aria-pressed="true"]');if(t)t.focus();});});
+  }
+  draw();
+};
+
+/* ---------- content ---------- */
+var LESSONS=[
+{id:'why-invest',note:'RM1',c:'--n1',title:'Why invest at all',mins:5,
+ summary:'Prices rise every year. See what that does to money left in the bank.',
+ body:['Prices rise over time. This is called inflation. If a plate of nasi lemak costs RM6 today and prices rise 3% a year, the same plate costs about RM8 in ten years.',
+  'Money in a savings account earns interest, but often not much more than inflation. The number in your account goes up, while what it can buy may stay flat or shrink.',
+  'Investing means putting money into assets such as shares, bonds or funds that can grow in value or pay you income. In return you accept risk. Values can fall, and nothing is guaranteed.'],
+ widget:'inflation',widgetTitle:'What inflation does to your savings',
+ points:['Saving keeps money safe and ready to use. Investing aims to grow it over years.','Higher potential return comes with higher risk.','Only invest money you will not need for several years.'],
+ quiz:[
+  {q:'What does inflation do to the buying power of cash?',o:['Raises it','Lowers it over time','Has no effect','Only affects investments'],a:1,e:'When prices rise, each ringgit buys less than before.'},
+  {q:'Which statement about investing is true?',o:['Returns are guaranteed if you hold long enough','Higher potential returns usually come with higher risk','Investing is the same as saving','Only wealthy people can invest'],a:1,e:'Risk and potential return rise together. Nothing is guaranteed, and many Malaysians start with small monthly amounts.'},
+  {q:'Where is money you may need within a year best kept?',o:['In shares for a quick gain','In cash or a fixed deposit','In a single stock','In a high-risk fund'],a:1,e:'Short deadlines leave no time to recover from a price drop, so stable and easy-to-reach money is the safer choice.'}]},
+{id:'asset-classes',note:'RM5',c:'--n5',title:'Where your money can go',mins:7,
+ summary:'Cash, bonds, stocks, funds, REITs and gold, compared side by side.',
+ body:['An asset class is a group of investments that behave in a similar way. Each one trades off risk, return and how quickly you can get your money out.',
+  'Cash and fixed deposits are steady but grow slowly. Stocks can grow faster but swing more. Funds and ETFs bundle many investments into one purchase so you do not have to pick each one yourself.',
+  'Most people hold a mix. The right mix depends on your goal, your time frame and how well you sleep when prices fall.'],
+ widget:'assets',widgetTitle:'Compare the main asset types',
+ points:['Safer assets usually grow more slowly.','Time frame matters. Long goals can take more risk than short ones.','A fund is a basket of investments, so one purchase spreads your money across many.'],
+ quiz:[
+  {q:'Which asset is usually the lowest risk?',o:['Fixed deposit','Single stock','REIT','Equity fund'],a:0,e:'Bank deposits are stable and protected by PIDM up to the limit, though they grow slowly.'},
+  {q:'A unit trust or ETF lets you...',o:['Own many assets through one purchase','Get guaranteed returns','Avoid all fees','Only buy gold'],a:0,e:'Funds pool money from many people and spread it across many holdings. Fees apply and returns are not guaranteed.'},
+  {q:'Why are stocks better for money you will not touch for 5 or more years?',o:['Their prices only go up','They pay a fixed rate','Prices swing a lot in the short term, so you need time to ride out dips','They are protected by PIDM'],a:2,e:'Stock prices can fall sharply for a while. A long time frame gives you room to wait without being forced to sell.'}]},
+{id:'compounding',note:'RM10',c:'--n10',title:'The power of compounding',mins:6,
+ summary:'Returns earn returns. Play with time and see why starting early matters.',
+ body:['Compounding means you earn returns on your original money and on the returns you already earned. The growth builds on itself.',
+  'Time does most of the work. The same monthly amount grows far more over 30 years than over 15, because the later years build on a much bigger base.',
+  'A quick check is the Rule of 72. Divide 72 by the yearly return to estimate how many years it takes to double your money. At 6% that is about 12 years.'],
+ widget:'compound',widgetTitle:'Grow your money over time',
+ points:['Start early, even with small amounts.','Stay invested through the ups and downs.','Waiting a decade to begin can cost you a large part of the final result.'],
+ quiz:[
+  {q:'Compound growth means...',o:['You earn returns on your original money and on past returns','Returns are added once a year only','Your money doubles every year','Interest is taxed twice'],a:0,e:'Each period\'s gains become part of the base that earns the next period\'s gains.'},
+  {q:'Using the Rule of 72, at 6% a year money doubles in about...',o:['6 years','12 years','72 years','20 years'],a:1,e:'72 divided by 6 is 12 years.'},
+  {q:'Which helps compounding the most?',o:['Starting early and staying invested','Checking prices daily','Switching funds often','Waiting for a perfect time'],a:0,e:'More years gives growth more time to build on itself. Trying to time the market often backfires.'}]},
+{id:'diversification',note:'RM20',c:'--n20',title:'Risk and diversification',mins:6,
+ summary:'Why not to put everything in one basket, and the risk you cannot remove.',
+ body:['Diversification means spreading your money across different investments so one bad result does not sink the whole portfolio.',
+  'Holding more stocks removes the risk tied to a single company. It cannot remove market risk, which is the risk that the whole market falls together.',
+  'Diversification also means different kinds of assets and different sectors. Ten bank shares is still a bet on banks. A broad fund or ETF can give wide spread in one step.'],
+ widget:'diversify',widgetTitle:'See risk fall as you add stocks',
+ points:['Spread money across companies, sectors and asset types.','The first few holdings cut risk the most.','Some risk always remains because markets move together.'],
+ quiz:[
+  {q:'Diversification means...',o:['Spreading money across different investments','Buying one great stock','Selling when prices fall','Only holding cash'],a:0,e:'It lowers the damage from any single investment going wrong.'},
+  {q:'Which risk cannot be removed by holding more stocks?',o:['Market risk, when the whole market falls','Risk of one company failing','Both of these','Neither of these'],a:0,e:'Company-specific risk shrinks as you add holdings. Market risk affects almost everything together.'},
+  {q:'You hold 25 shares and all of them are banks. Your portfolio is...',o:['Well diversified','Still concentrated in one sector','Risk free','Always better than a fund'],a:1,e:'Many holdings in the same sector still rise and fall together.'}]},
+{id:'getting-started',note:'RM50',c:'--n50',title:'Starting in Malaysia',mins:8,
+ summary:'A practical checklist, what a Bursa lot costs, and scam warning signs.',
+ body:['Before you pick an investment, get your foundations in order. A cash cushion and a clear goal protect you from having to sell at a bad time.',
+  'To buy shares on Bursa Malaysia you need a CDS account and a trading account through a licensed broker. Unit trusts and ETFs can be bought through licensed distributors and digital platforms.',
+  'Your EPF savings and the Private Retirement Scheme (PRS) are also long-term investments. Check the current rules and any tax relief with official sources such as KWSP and LHDN.'],
+ widget:'start',widgetTitle:'Checklist and tools',
+ points:['Emergency fund first, then invest.','Use only licensed providers.','Be wary of anything that promises high returns with no risk.'],
+ quiz:[
+  {q:'To buy shares on Bursa Malaysia you need...',o:['A CDS account through a licensed broker','A PIDM certificate','Approval from EPF','To be a company director'],a:0,e:'Brokers open your trading and CDS accounts, and shares are held in the CDS account.'},
+  {q:'Which is a red flag for an investment scam?',o:['Guaranteed high returns with little risk','A licensed provider','Clear fee disclosure','Time to think it over'],a:0,e:'Real investments carry risk. Guaranteed high returns are a classic warning sign.'},
+  {q:'What should you do before investing?',o:['Build an emergency fund','Borrow to invest','Pick a hot stock tip','Withdraw your EPF'],a:0,e:'A cash cushion stops you from selling investments in a hurry when something unexpected happens.'}]},
+{id:'habits',note:'RM100',c:'--n100',title:'Habits that last',mins:7,
+ summary:'Invest a fixed amount monthly and learn to ride out the dips.',
+ body:['Dollar-cost averaging means investing a fixed amount at regular intervals, such as RM600 on the first of each month. You buy more units when prices are low and fewer when prices are high.',
+  'It does not guarantee a profit, and in a market that only rises, investing everything at the start does better. Its real value is that it turns investing into a habit and takes away the pressure of picking the perfect day.',
+  'Common mistakes include chasing hot tips, panic selling after a fall, putting everything in one stock and ignoring fees. A written plan helps you stay calm.'],
+ widget:'dca',widgetTitle:'Monthly investing in three markets',
+ points:['Automate a fixed monthly amount.','Decide your plan before prices move, then stick to it.','Review once or twice a year, not every day.'],
+ quiz:[
+  {q:'Dollar-cost averaging means...',o:['Investing a fixed amount at regular intervals','Investing everything at once','Buying only when prices fall','Selling a little each month'],a:0,e:'The amount stays fixed while the price changes, so the number of units you buy changes.'},
+  {q:'When prices swing, monthly investing tends to...',o:['Buy more units when prices are low','Guarantee a profit','Avoid all losses','Beat a lump sum every time'],a:0,e:'A fixed amount buys more units at low prices. It cannot guarantee profit or beat every alternative.'},
+  {q:'Your investments fall 15% in a month and your goal is 15 years away. A sensible response is...',o:['Sell everything now','Review your plan and avoid panic decisions','Borrow to buy more','Switch to last year\'s top performer'],a:1,e:'Falls are normal over long periods. Decisions made in panic usually lock in losses.'}]}
+];
+
+var GLOSSARY=[
+['Asset','Something you own that has value, such as shares, bonds, property or cash.'],
+['Board lot','The standard trading unit on Bursa Malaysia, usually 100 shares.'],
+['Bond','A loan to a government or company that pays interest and returns your money at maturity.'],
+['Bull and bear market','A bull market is a long period of rising prices. A bear market is a long period of falling prices.'],
+['Bursa Malaysia','The stock exchange of Malaysia, where shares, ETFs and REITs are traded.'],
+['Capital gain','The profit when you sell an asset for more than you paid.'],
+['CDS account','Central Depository System account that holds your Bursa Malaysia shares in electronic form.'],
+['Compound interest','Earning returns on your original money and on the returns already earned.'],
+['Diversification','Spreading money across different investments to reduce the effect of any single one failing.'],
+['Dividend','A share of a company\'s profit paid to its shareholders.'],
+['Dollar-cost averaging','Investing a fixed amount at regular intervals regardless of the price.'],
+['EPF (KWSP)','Employees Provident Fund, the national retirement savings scheme for workers in Malaysia.'],
+['ETF','Exchange-traded fund. A fund that holds many investments and trades on an exchange like a share.'],
+['Expense ratio','The yearly fee a fund charges, shown as a percentage of your investment.'],
+['FBM KLCI','The main index of Bursa Malaysia, tracking 30 large listed companies.'],
+['Inflation','The general rise in prices over time, which lowers what each ringgit can buy.'],
+['Liquidity','How quickly and easily you can turn an asset into cash.'],
+['Portfolio','All the investments you hold together.'],
+['PRS','Private Retirement Scheme. Voluntary long-term retirement savings offered by approved providers.'],
+['REIT','Real estate investment trust. A listed fund that owns income-producing property.'],
+['Risk tolerance','How much loss and price swinging you can accept without abandoning your plan.'],
+['Securities Commission Malaysia','The regulator of the capital market in Malaysia. It licenses providers and publishes an Investor Alert List.'],
+['Stock (share)','A small ownership stake in a company.'],
+['Sukuk','Shariah-compliant investment certificates, similar in role to bonds.'],
+['Unit trust','A fund that pools money from many investors and is run by a professional manager.'],
+['Volatility','How much and how quickly an investment\'s price moves up and down.'],
+['Yield','The income from an investment each year, shown as a percentage of its price.']
+];
+
+/* ====== FX extension ====== */
+var fxp=function(x){return (x*100).toFixed(2)+'%'},fxr=function(x){return x.toFixed(4)},fxl=function(v){return v.toFixed(2)+'%'},fxs=function(v){return 'RM '+v.toFixed(2)};
+function fxc(v){var m=v.imy/100,u=v.ius/100,pm=v.pmy/100,pu=v.pus/100,ppp=v.s0*(1+pm)/(1+pu),fwd=v.s0*(1+m)/(1+u);
+return {rm:(1+m)/(1+pm)-1,ru:(1+u)/(1+pu)-1,ppp:ppp,pc:ppp/v.s0-1,fwd:fwd,fc:fwd/v.s0-1};}
+function fxDir(c){return Math.abs(c)<0.00005?'stays about the same':c<0?'strengthens (fewer ringgit per US dollar)':'weakens (more ringgit per US dollar)';}
+
+/* XP is worked out from saved quiz scores (10 XP per correct answer) plus 10 XP per "fx-" action. Level = every 50 XP. */
+function fxAward(id){if(!store.checks[id]){store.checks[id]=true;save();updatePill();}}
+function fxXP(){var x=0;LESSONS.forEach(function(l){x+=(store.done[l.id]||0)*10;});Object.keys(store.checks).forEach(function(k){if(k.indexOf('fx-')===0&&store.checks[k])x+=10;});return x;}
+function fxTry(root,id){root.addEventListener('input',function(){fxAward('fx-'+id);});}
+
+W.fisher=function(root){
+var f={i:fxl,p:fxl};
+root.innerHTML='<div class="controls">'+field('i','Nominal interest rate',0,12,0.5,5,f.i)+field('p','Inflation rate',0,12,0.5,3,f.p)+'</div><div id="out"></div>';
+wire(root,f,function(v){
+var r=(1+v.i/100)/(1+v.p/100)-1,ap=v.i/100-v.p/100;
+$('#out',root).innerHTML='<div class="stats">'+stat(fxp(r),'Exact real rate: (1 + i) / (1 + π) − 1',true)+stat(fxp(ap),'Quick estimate: i − π',false)+stat(((r-ap)*100).toFixed(2)+' pts','Error of the estimate',false)+'</div>'+
+'<p class="say'+(r<0?' warn':'')+'">'+(r<0?'The real rate is negative: prices rise faster than your money earns, so buying power falls.':'The real rate is positive: your money earns more than prices rise, so buying power grows.')+'</p><p class="fine">Illustrative rates, not current market rates. One-year horizon.</p>';
+});fxTry(root,'fisher');};
+
+W.ppp=function(root){
+var f={s0:fxs,pmy:fxl,pus:fxl,t:function(v){return v+(v===1?' year':' years');}};
+root.innerHTML='<div class="controls">'+field('s0','Spot rate today (MYR per 1 USD)',3.5,5.5,0.05,4.5,f.s0)+field('pmy','Malaysia inflation per year',0,10,0.5,2,f.pmy)+field('pus','US inflation per year',0,10,0.5,3,f.pus)+field('t','Time',1,10,1,1,f.t)+'</div><div id="out"></div>';
+wire(root,f,function(v){
+var k=Math.pow((1+v.pmy/100)/(1+v.pus/100),v.t),s=v.s0*k;
+$('#out',root).innerHTML='<div class="stats">'+stat('RM '+fxr(s),'PPP-implied rate after '+v.t+(v.t===1?' year':' years'),true)+stat(fxp(k-1),'Change in MYR per USD',false)+'</div>'+
+'<p class="say'+(k>1?' warn':'')+'">S = '+v.s0.toFixed(2)+' × ((1 + '+(v.pmy/100).toFixed(3)+') / (1 + '+(v.pus/100).toFixed(3)+'))'+(v.t>1?'^'+v.t:'')+' = '+fxr(s)+'. Malaysian inflation is '+(v.pmy>v.pus?'higher than':v.pmy<v.pus?'lower than':'equal to')+' US inflation, so the ringgit '+fxDir(k-1)+'.</p><p class="fine">Illustrative inflation rates. PPP is a long-run tendency, not a short-run forecast.</p>';
+});fxTry(root,'ppp');};
+
+W.irp=function(root){
+var f={s0:fxs,imy:fxl,ius:fxl,amt:function(v){return 'USD '+Math.round(v).toLocaleString('en-MY');}};
+root.innerHTML='<div class="controls">'+field('s0','Spot rate (MYR per 1 USD)',3.5,5.5,0.05,4.5,f.s0)+field('imy','Malaysia interest rate',0,8,0.25,3,f.imy)+field('ius','US interest rate',0,8,0.25,4.5,f.ius)+field('amt','Amount to pay in one year',1000,50000,1000,10000,f.amt)+'</div><div id="out"></div>';
+wire(root,f,function(v){
+var F=v.s0*(1+v.imy/100)/(1+v.ius/100),ch=F/v.s0-1;
+$('#out',root).innerHTML='<div class="stats">'+stat(fxr(F),'IRP forward rate (MYR per USD)',true)+stat(fxp(ch),'Forward premium (+) or discount (−) on USD',false)+stat(fmt(v.amt*F),'MYR cost locked in with the forward',false)+stat(fmt(v.amt*v.s0),'MYR cost at today’s spot, for comparison',false)+'</div>'+
+'<p class="say">F = '+v.s0.toFixed(2)+' × (1 + '+(v.imy/100).toFixed(4)+') / (1 + '+(v.ius/100).toFixed(4)+') = '+fxr(F)+'. The USD trades at a forward '+(ch<0?'discount':ch>0?'premium':'level')+' because its interest rate is '+(v.ius>v.imy?'higher':v.ius<v.imy?'lower':'the same')+' than the ringgit’s. A Malaysian importer can fix the ringgit cost today.</p><p class="fine">Illustrative rates. Ignores bank spreads, fees and taxes.</p>';
+});fxTry(root,'irp');};
+
+function fxLine(v,c){var a=[v.s0,c.ppp,c.fwd],mn=Math.min.apply(0,a),mx=Math.max.apply(0,a),pd=Math.max(0.06,(mx-mn)*0.5),lo=mn-pd,hi=mx+pd,X=function(n){return 40+(n-lo)/(hi-lo)*560;};
+var m=[[v.s0,'Spot '+v.s0.toFixed(2),'var(--ink)',24],[c.ppp,'PPP '+fxr(c.ppp),'var(--accent)',72],[c.fwd,'Forward '+fxr(c.fwd),'var(--n20)',90]];
+return '<svg class="chart" viewBox="0 0 640 100" role="img" aria-label="Spot, PPP and forward rates on a number line"><line class="grid-l" x1="40" x2="600" y1="46" y2="46" style="stroke-width:3"/>'+m.map(function(k){var x=X(k[0]);return '<circle cx="'+x.toFixed(1)+'" cy="46" r="7" style="fill:'+k[2]+'"/><text class="ax" x="'+Math.min(Math.max(x,70),570).toFixed(1)+'" y="'+k[3]+'" text-anchor="middle">'+k[1]+'</text>';}).join('')+'</svg><p class="fine">Left means a stronger ringgit (fewer ringgit per US dollar). Illustrative data.</p>';}
+
+W.fxscn=function(root){
+var f={s0:fxs,imy:fxl,ius:fxl,pmy:fxl,pus:fxl,d:function(v){return (v>0?'+':'')+v.toFixed(2)+' pts';}};
+var PR={1:{s0:4.5,imy:3,ius:4.5,pmy:2,pus:3},2:{s0:4.5,imy:3.5,ius:4.5,pmy:4,pus:3}};
+var NM={imy:'Malaysia interest rate',ius:'US interest rate',pmy:'Malaysia inflation',pus:'US inflation'},last=null;
+root.innerHTML='<div class="row" style="margin:0 0 22px"><button class="btn ghost" data-pr="1">Scenario 1: small inflation gap</button><button class="btn ghost" data-pr="2">Scenario 2: Malaysian inflation shock</button></div>'+
+'<div class="controls">'+field('s0','Spot rate (MYR per 1 USD)',3.5,5.5,0.05,4.5,f.s0)+field('imy','Malaysia interest rate',0,8,0.25,3,f.imy)+field('ius','US interest rate',0,8,0.25,4.5,f.ius)+field('pmy','Malaysia inflation',0,8,0.25,2,f.pmy)+field('pus','US inflation',0,8,0.25,3,f.pus)+'</div><div id="out"></div>'+
+'<h3 class="sub-h">What if one input changes?</h3><div class="controls"><label class="field"><span class="f-top"><span>Input to change</span></span><select id="sel" class="search" style="margin:0">'+Object.keys(NM).map(function(k){return '<option value="'+k+'"'+(k==='pus'?' selected':'')+'>'+NM[k]+'</option>';}).join('')+'</select></label>'+field('d','Change by',-3,3,0.25,1,f.d)+'</div><div id="wi"></div>'+
+'<h3 class="sub-h">Ask the tutor</h3><div class="row" style="margin-top:0"><button class="btn ghost" data-ask="fisher">Explain Fisher</button><button class="btn ghost" data-ask="ppp">Explain PPP</button><button class="btn ghost" data-ask="irp">Explain IRP</button></div><p class="say" id="tut" aria-live="polite">Choose a question. Answers use your current inputs and the same formulas as above.</p>';
+wire(root,f,function(v){
+var c=fxc(v),k=$('#sel',root).value,b=Object.assign({},v);b[k]=Math.max(0,+(v[k]+v.d).toFixed(2));var cb=fxc(b);last={v:v,c:c};
+$('#out',root).innerHTML='<div class="stats">'+stat(fxr(c.ppp),'PPP-implied spot ('+fxp(c.pc)+')',true)+stat(fxr(c.fwd),'IRP forward ('+fxp(c.fc)+')',true)+stat(fxp(c.rm),'Malaysia real rate (Fisher)',false)+stat(fxp(c.ru),'US real rate (Fisher)',false)+'</div>'+
+'<p class="say'+(c.rm<0?' warn':'')+'">The ringgit '+fxDir(c.pc)+' under PPP. The forward and PPP rates differ by '+Math.abs(c.fwd-c.ppp).toFixed(4)+' because real rates differ; if they were equal, the two would match.</p>';
+$('#out',root).insertAdjacentHTML('beforeend',fxLine(v,c));var rows=[['PPP-implied spot',fxr(c.ppp),fxr(cb.ppp),(cb.ppp-c.ppp).toFixed(4)],['IRP forward',fxr(c.fwd),fxr(cb.fwd),(cb.fwd-c.fwd).toFixed(4)],['Malaysia real rate',fxp(c.rm),fxp(cb.rm),((cb.rm-c.rm)*100).toFixed(2)+' pts']];
+$('#wi',root).innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Result</th><th>Base</th><th>What if</th><th>Change</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+r.join('</td><td>')+'</td></tr>';}).join('')+'</tbody></table></div><p class="fine">Only '+NM[k].toLowerCase()+' changes. Illustrative data, one-year horizon.</p>';
+});
+function poke(){root.querySelector('input[data-key="d"]').dispatchEvent(new Event('input',{bubbles:true}));}
+$('#sel',root).addEventListener('change',poke);
+root.addEventListener('input',function(e){if(e.target.dataset&&e.target.dataset.key==='d'&&+e.target.value!==0)fxAward('fx-wi');});
+root.querySelectorAll('[data-pr]').forEach(function(b){b.addEventListener('click',function(){var p=PR[b.dataset.pr];Object.keys(p).forEach(function(k){var i=root.querySelector('input[data-key="'+k+'"]');i.value=p[k];i.dispatchEvent(new Event('input',{bubbles:true}));});fxAward('fx-p'+b.dataset.pr);});});
+root.querySelectorAll('[data-ask]').forEach(function(b){b.addEventListener('click',function(){var v=last.v,c=last.c,t=b.dataset.ask,s;
+if(t==='fisher')s='Fisher: r = (1 + i) / (1 + π) − 1. Malaysia: '+(1+v.imy/100).toFixed(4)+' / '+(1+v.pmy/100).toFixed(4)+' − 1 = '+fxp(c.rm)+'. US: '+fxp(c.ru)+'. '+(c.rm<c.ru?'Malaysia’s real return is lower, which tends to pull capital toward the US.':'Malaysia’s real return is at least as high as the US.');
+else if(t==='ppp')s='PPP: S₁ = '+v.s0.toFixed(2)+' × '+(1+v.pmy/100).toFixed(4)+' / '+(1+v.pus/100).toFixed(4)+' = '+fxr(c.ppp)+'. The ringgit '+fxDir(c.pc)+'. Treat this as a long-run guide only.';
+else s='IRP: F = '+v.s0.toFixed(2)+' × '+(1+v.imy/100).toFixed(4)+' / '+(1+v.ius/100).toFixed(4)+' = '+fxr(c.fwd)+' ('+fxp(c.fc)+'). The currency with the higher interest rate trades at a forward discount, so no one earns a risk-free profit from the rate gap.';
+$('#tut',root).textContent=s;fxAward('fx-tutor');});});
+fxTry(root,'scn');};
+
+/* ---------- new lessons, inserted after lesson 1 so the chain reads: inflation → Fisher → PPP → IRP → scenarios ---------- */
+LESSONS.splice(1,0,
+{id:'fisher',note:'FX1',c:'--n5',title:'Fisher: interest rates and inflation',mins:6,
+summary:'Why nominal interest rates rise with inflation, and what your real return is.',
+body:['A bank may pay 5%, but if prices rise 3% a year, your buying power grows by much less. The Fisher effect says lenders ask for higher nominal interest rates when they expect higher inflation.','The exact link is (1 + i) = (1 + r) × (1 + π), where i is the nominal rate, r the real rate and π inflation. Rearranged, r = (1 + i) / (1 + π) − 1. Subtracting inflation from the nominal rate is a quick estimate.','This matters for exchange rates because countries with higher expected inflation tend to have higher nominal rates, and both feed into currency movements in the next lessons.'],
+widget:'fisher',widgetTitle:'Nominal rate, inflation and real rate',
+points:['Real rate = (1 + nominal) / (1 + inflation) − 1.','A negative real rate means buying power is shrinking.','Higher expected inflation pushes nominal rates up.'],
+quiz:[{q:'A deposit pays 5% and inflation is 3%. The exact real rate is about…',o:['8.00%','3.00%','1.94%','5.00%'],a:2,e:'1.05 / 1.03 − 1 = 1.94%. Subtracting gives 2%, which is only an estimate.'},
+{q:'Other things equal, higher expected inflation tends to make nominal interest rates…',o:['Fall','Rise','Stay fixed','Become negative'],a:1,e:'Lenders want compensation for losing buying power.'},
+{q:'A negative real rate means…',o:['Your money buys more over time','Your money buys less over time','The bank is closing','Inflation is zero'],a:1,e:'Prices rise faster than your money earns.'}]},
+{id:'ppp',note:'FX2',c:'--n20',title:'PPP: inflation and the exchange rate',mins:7,
+summary:'Why a country with higher inflation tends to see its currency weaken.',
+body:['Purchasing power parity says the same basket of goods should cost the same in every country once measured in one currency. If Malaysian prices rise faster than US prices, the ringgit must weaken over time to keep that balance.','The formula is S₁ = S₀ × (1 + π_MY) / (1 + π_US), where S is the number of ringgit per 1 US dollar. If S rises, the ringgit weakens. If S falls, it strengthens.','Example: S₀ = 4.50, Malaysian inflation 2%, US inflation 3%. S₁ = 4.50 × 1.02 / 1.03 = 4.4563, so the ringgit strengthens by about 0.97%.'],
+widget:'ppp',widgetTitle:'PPP-implied exchange rate',
+points:['Higher home inflation means a weaker home currency, other things equal.','Always check the quote: here S is MYR per USD.','PPP is a long-run tendency. Short-run rates can differ a lot.'],
+quiz:[{q:'Malaysian inflation is above US inflation. PPP implies the ringgit…',o:['Strengthens','Weakens','Stays fixed','Becomes illiquid'],a:1,e:'Higher home inflation means the home currency weakens to keep purchasing power equal.'},
+{q:'S falls from 4.50 to 4.45 MYR per USD. The ringgit has…',o:['Weakened','Not moved','Become worthless','Strengthened'],a:3,e:'Fewer ringgit are needed per dollar, so the ringgit strengthened.'},
+{q:'PPP-implied rates are best treated as…',o:['Guaranteed predictions','Daily trading signals','Long-run guides, not exact short-run forecasts','Current market rates'],a:2,e:'Trade costs, capital flows and sticky prices keep short-run rates away from PPP.'}]},
+{id:'irp',note:'FX3',c:'--n100',title:'IRP: interest rates and the forward rate',mins:7,
+summary:'How the interest rate gap sets the forward exchange rate, and how importers use it.',
+body:['A forward contract fixes an exchange rate today for a payment later. Interest rate parity says the forward rate must reflect the interest rate gap, or traders could earn a risk-free profit.','The formula is F = S₀ × (1 + i_MY) / (1 + i_US). The currency with the higher interest rate trades at a forward discount. The International Fisher Effect uses the same ratio to describe the expected future spot rate.','Example: S₀ = 4.50, Malaysia 3%, US 4.5%. F = 4.50 × 1.03 / 1.045 = 4.4354. A Malaysian importer owing USD 10,000 in a year can lock in about RM44,354 today.'],
+widget:'irp',widgetTitle:'Forward rate and a hedging example',
+points:['Higher interest rate means a forward discount on that currency.','IRP is about forward contracts. The International Fisher Effect is about expected future spot rates.','Fees, taxes and controls create small gaps in practice.'],
+quiz:[{q:'Malaysia’s interest rate is lower than the US rate. The USD/MYR forward rate is…',o:['Below spot','Above spot','Equal to spot','Impossible to find'],a:0,e:'F = S₀ × (1 + i_MY) / (1 + i_US) is below S₀ when i_MY is lower.'},
+{q:'Which theory ties the forward rate to the interest rate gap?',o:['PPP','Interest rate parity','Rule of 72','Diversification'],a:1,e:'IRP links the forward premium or discount to the interest rate difference.'},
+{q:'Why can’t forward rates be set at any level?',o:['Banks forbid it','Traders could earn risk-free profit (arbitrage)','Governments fix them','They are always equal to spot'],a:1,e:'Any gap from the IRP rate could be exploited until prices adjust.'}]},
+{id:'fx-scenarios',note:'FX4',c:'--n10',title:'Putting it together: scenarios',mins:8,
+summary:'Change inflation and interest rates together and watch the exchange rate respond.',
+body:['The three ideas form one chain. Higher expected inflation raises nominal interest rates (Fisher). Higher inflation also weakens the currency (PPP). Higher interest rates appear as a forward discount (IRP).','If real interest rates were equal in both countries, the PPP and IRP results would match exactly. When they differ, the gap shows that real rates differ.','Try both preset scenarios, then use the what-if panel to change one input at a time. All figures are illustrative.'],
+widget:'fxscn',widgetTitle:'Scenario engine with what-if comparison',
+points:['Change one input at a time to see its effect.','Check the direction before the size: who has higher inflation, who has higher rates.','Models give tendencies, not guarantees.'],
+quiz:[{q:'If real interest rates are equal in both countries, the PPP and IRP implied rates…',o:['Match','Always differ','Cannot be calculated','Equal spot'],a:0,e:'Equal real rates make (1 + i_MY) / (1 + i_US) equal to (1 + π_MY) / (1 + π_US).'},
+{q:'Malaysian inflation rises and all else is fixed. The PPP-implied MYR per USD…',o:['Falls','Is unchanged','Rises, so the ringgit weakens','Becomes zero'],a:2,e:'A larger numerator raises S₁.'},
+{q:'Why compare a base case with a what-if?',o:['To find a guaranteed forecast','To see how much one assumption matters','To avoid using formulas','To match market prices'],a:1,e:'Changing one input at a time isolates its effect.'}]}
+);
+
+GLOSSARY.push(
+['Appreciation and depreciation','A currency appreciates when it buys more foreign currency and depreciates when it buys less.'],
+['Exchange rate (spot)','The price of one currency in another today. In these lessons S is MYR per 1 USD.'],
+['Fisher effect','Nominal interest rate ≈ real rate + expected inflation. Exactly, (1 + i) = (1 + r)(1 + π).'],
+['Forward rate','An exchange rate agreed today for exchange at a set future date.'],
+['International Fisher Effect','Expected currency change follows the nominal interest rate gap between two countries.'],
+['Interest rate parity (IRP)','The forward rate reflects the interest rate gap: F = S₀ × (1 + i_home) / (1 + i_foreign).'],
+['Purchasing power parity (PPP)','Exchange rates adjust for inflation gaps: S₁ = S₀ × (1 + π_home) / (1 + π_foreign).'],
+['Real interest rate','The return after inflation: (1 + nominal) / (1 + inflation) − 1.']
+);
+GLOSSARY.sort(function(a,b){return a[0].localeCompare(b[0]);});
+
+/* ====== Level, daily challenge, confetti ====== */
+function fxBurst(){if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;var cs=['--n1','--n5','--n10','--n20','--n50','--n100'];for(var i=0;i<40;i++){var e=document.createElement('i');e.className='cf';e.style.background='var('+cs[i%6]+')';e.style.setProperty('--x',(Math.random()*600-300)+'px');e.style.setProperty('--y',(-Math.random()*300-80)+'px');e.style.setProperty('--r',(Math.random()*720-360)+'deg');document.body.appendChild(e);setTimeout(e.remove.bind(e),1500);}}
+var FXT=['Seedling','Saver','Planner','Investor','FX Analyst','Strategist'];
+function fxLvlHTML(){var xp=fxXP(),lv=Math.floor(xp/50)+1;return '<b>Level '+lv+': '+FXT[Math.min(lv-1,FXT.length-1)]+'</b><div class="meter-bar"><i style="width:'+(xp%50)*2+'%"></i></div><span class="fine">'+xp+' XP · '+(50-xp%50)+' XP to level '+(lv+1)+'</span>';}
+function fxDaily(){var all=[];LESSONS.forEach(function(l){l.quiz.forEach(function(q){all.push(q);});});
+var d=new Date().toISOString().slice(0,10),h=0;for(var i=0;i<d.length;i++)h=(h*31+d.charCodeAt(i))%9973;
+var q=all[h%all.length],id='fx-d'+d,el=document.createElement('section');el.className='group daily';
+el.innerHTML='<h3>Daily challenge'+(store.checks[id]?' ✔':'')+'</h3><p class="q-text" style="font-size:1.1rem;margin:10px 0 4px">'+q.q+'</p><div class="opts">'+q.o.map(function(o,n){return '<button class="opt" data-n="'+n+'">'+o+'</button>';}).join('')+'</div><div class="q-fb" aria-live="polite">'+(store.checks[id]?'Done for today. Come back tomorrow for a new question.':'Answer correctly for 10 XP.')+'</div>';
+el.querySelectorAll('.opt').forEach(function(b){b.addEventListener('click',function(){var ok=+b.dataset.n===q.a;el.querySelectorAll('.opt').forEach(function(x){x.disabled=true;if(+x.dataset.n===q.a)x.classList.add('ok');});if(!ok)b.classList.add('no');
+el.querySelector('.q-fb').innerHTML='<b>'+(ok?'Correct. ':'Not quite. ')+'</b>'+q.e+(ok&&!store.checks[id]?' +10 XP':'');if(ok){var first=!store.checks[id];fxAward(id);if(first)fxBurst();var l=document.getElementById('lvl');if(l)l.innerHTML=fxLvlHTML();}});});return el;}
+
+new MutationObserver(function(){var s=document.querySelector('.score');if(s&&!s.dataset.b){s.dataset.b=1;var m=s.textContent.split('/');if(+m[0]===+m[1])fxBurst();else s.classList.add('pop');}}).observe(document.getElementById('app'),{childList:true,subtree:true});
+var fxBar=document.createElement('div');fxBar.className='rp';document.body.appendChild(fxBar);
+var topEl=document.querySelector('.top');
+window.addEventListener('scroll',function(){var h=document.documentElement.scrollHeight-innerHeight;fxBar.style.width=(h>0?scrollY/h*100:0)+'%';topEl.classList.toggle('scrolled',scrollY>4);},{passive:true});
+
+/* ---------- views ---------- */
+var app=$('#app');
+function doneCount(){return LESSONS.filter(function(l){return store.done[l.id]!==undefined}).length}
+function updatePill(){var xp=fxXP();$('#pill').textContent=doneCount()+' of '+LESSONS.length+' done · Lv '+(Math.floor(xp/50)+1)+' · '+xp+' XP';}
+function setNav(k){document.querySelectorAll('[data-nav]').forEach(function(a){if(a.dataset.nav===k)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});}
+
+function renderHome(){
+  setNav('home');document.title='InvestEd';
+  var n=doneCount(),pc=n/LESSONS.length*100;
+  var nt=[['RM1','--n1',-12],['RM5','--n5',-4],['RM10','--n10',4],['RM50','--n50',12]];
+  app.innerHTML='<section class="hero">'+
+  '<div class="fan" aria-hidden="true">'+nt.map(function(x){return '<span class="note big" style="--c:var('+x[1]+');--rt:'+x[2]+'deg">'+x[0]+'</span>';}).join('')+'</div>'+
+  '<p class="eyebrow">Investing and FX basics for Malaysia</p><h1>Learn investing from the first ringgit.</h1>'+
+  '<p class="lede">Ten short lessons with calculators you can play with and a quick quiz after each one. Examples use ringgit, Bursa Malaysia and products you can find here.</p>'+
+  '<div class="progress"><div class="prog"><b>'+n+' of '+LESSONS.length+' lessons</b><div class="meter-bar"><i style="width:'+pc+'%"></i></div></div><div class="prog" id="lvl">'+fxLvlHTML()+'</div></div></section>'+
+  '<div id="daily"></div>'+
+  '<h2 class="sec-t">Lessons</h2>'+
+  '<div class="list">'+LESSONS.map(function(l){
+    var s=store.done[l.id];
+    var st=s!==undefined?'<span class="tag-done">Done '+s+'/'+l.quiz.length+'</span>':'<span>Not started</span>';
+    return '<a class="item" href="#lesson-'+l.id+'"><span class="note" style="--c:var('+l.c+')">'+l.note+'</span><span><h3>'+l.title+'</h3><p>'+l.summary+'</p><span class="meta"><span>'+l.mins+' min</span>'+st+'</span></span></a>';
+  }).join('')+'</div>'+
+  '<p class="foot-note">Each lesson is coloured like a ringgit note. The bigger the note, the bigger the idea. This is education only and not financial advice. Numbers in the calculators are examples.</p>';
+  $('#daily').appendChild(fxDaily());
+}
+
+function renderLesson(L,idx){
+  setNav('home');document.title='InvestEd';
+  var next=LESSONS[idx+1];
+  app.innerHTML='<div class="lesson"><a class="back" href="#home">Lessons</a>'+
+  '<div class="l-head"><span class="note big" style="--c:var('+L.c+')">'+L.note+'</span><div><h1>'+L.title+'</h1><div class="sub">Lesson '+(idx+1)+' of '+LESSONS.length+' · '+L.mins+' min</div></div></div>'+
+  '<section class="sec intro">'+L.body.map(function(t){return '<p>'+t+'</p>'}).join('')+'</section>'+
+  '<section class="sec"><h2 class="sec-t">'+L.widgetTitle+'</h2><div class="group"><div id="widget"></div></div></section>'+
+  '<section class="sec"><h2 class="sec-t">Remember</h2><ul class="points">'+L.points.map(function(t){return '<li>'+t+'</li>'}).join('')+'</ul></section>'+
+  '<section class="sec"><h2 class="sec-t">Check yourself</h2><div class="group" id="quiz"></div></section></div>';
+  W[L.widget]($('#widget'));
+  runQuiz($('#quiz'),L,next);
+}
+
+function runQuiz(root,L,next){
+  var i=0,score=0,q=L.quiz;
+  function show(){
+    if(i>=q.length){return finish();}
+    var Q=q[i];
+    root.innerHTML='<div class="q-head">Question '+(i+1)+' of '+q.length+'</div><h3 class="q-text">'+Q.q+'</h3><div class="opts">'+Q.o.map(function(o,n){return '<button class="opt" data-n="'+n+'">'+o+'</button>'}).join('')+'</div><div class="q-fb" aria-live="polite"></div>';
+    root.querySelectorAll('.opt').forEach(function(b){b.addEventListener('click',function(){
+      var n=+b.dataset.n,right=n===Q.a;
+      root.querySelectorAll('.opt').forEach(function(x){x.disabled=true;if(+x.dataset.n===Q.a)x.classList.add('ok');});
+      if(!right)b.classList.add('no');else score++;
+      var fb=root.querySelector('.q-fb');
+      fb.innerHTML='<b>'+(right?'Correct. ':'Not quite. ')+'</b>'+Q.e+'<div class="row"><button class="btn" id="nx">'+(i===q.length-1?'See result':'Next question')+'</button></div>';
+      var nx=$('#nx',root);nx.focus();nx.addEventListener('click',function(){i++;show();});
+    });});
+  }
+  function finish(){
+    var prev=store.done[L.id];
+    store.done[L.id]=prev===undefined?score:Math.max(prev,score);save();updatePill();
+    var msg=score===q.length?'Full marks. You have this one.':score>=2?'Good work. Reread the explanations on any you missed.':'Worth another read of the lesson, then try again.';
+    root.innerHTML='<p class="q-head">Result</p><div class="score">'+score+' / '+q.length+'</div><p style="margin-top:6px">'+msg+'</p><div class="row">'+
+      (next?'<a class="btn" href="#lesson-'+next.id+'">Next: '+next.title+'</a>':'<a class="btn" href="#home">Back to all lessons</a>')+
+      '<button class="btn ghost" id="again">Try the quiz again</button></div>';
+    $('#again',root).addEventListener('click',function(){i=0;score=0;show();});
+  }
+  show();
+}
+
+function renderGlossary(){
+  setNav('glossary');document.title='InvestEd';
+  app.innerHTML='<h1>Glossary</h1><p class="lede">Plain-language meanings for the terms you will meet.</p>'+
+  '<label for="q" class="eyebrow" style="margin-top:28px;margin-bottom:0;display:block">Search terms</label>'+
+  '<input id="q" class="search" type="search" placeholder="Try “dividend” or “EPF”" autocomplete="off">'+
+  '<div class="list"><dl class="gl" id="gl"></dl></div><p class="fine" id="none" hidden>No terms match that search.</p>';
+  var dl=$('#gl');
+  dl.innerHTML=GLOSSARY.map(function(g){return '<div data-t="'+(g[0]+' '+g[1]).toLowerCase().replace(/"/g,'')+'"><dt>'+g[0]+'</dt><dd>'+g[1]+'</dd></div>'}).join('');
+  $('#q').addEventListener('input',function(e){
+    var t=e.target.value.trim().toLowerCase(),shown=0;
+    dl.querySelectorAll('div').forEach(function(d){var m=!t||d.dataset.t.indexOf(t)>-1;d.hidden=!m;if(m)shown++;});
+    $('#none').hidden=shown>0;
+  });
+}
+
+/* depth decides direction: going deeper slides in from the right, going back slides in from the left */
+var prevD=0;
+function route(){
+  var h=location.hash.replace('#',''),L=null,idx=-1,d=0;
+  if(h.indexOf('lesson-')===0){for(var i=0;i<LESSONS.length;i++){if('lesson-'+LESSONS[i].id===h){L=LESSONS[i];idx=i;break;}}}
+  if(L)d=2;else if(h==='glossary')d=1;
+  app.dataset.dir=d>=prevD?'fwd':'back';prevD=d;
+  if(L)renderLesson(L,idx);else if(d===1)renderGlossary();else renderHome();
+  window.scrollTo(0,0);
+  app.classList.remove('enter');void app.offsetWidth;app.classList.add('enter');
+}
+window.addEventListener('hashchange',route);
+updatePill();route();
+})();
+</script>
+
+</body>
+</html>
